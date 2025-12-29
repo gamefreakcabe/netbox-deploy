@@ -1,0 +1,65 @@
+---
+- name: "Setting up Netbox" 
+  hosts: "staging"
+  remote_user: mcabe
+  become: yes
+  become_method: sudo
+  become_user: root
+  gather_facts: yes
+  connection: ssh
+
+  # Playbook variables
+  vars:
+    # server variable
+    server_user: mcabe
+
+    # Postgres variables
+    db_name: netbox
+    db_user: netbox
+    db_password: J5brHrAXFLQSif0K
+    
+    # Netbox variables
+    NEWVER: 4.2.9 
+    OLDVER: 4.1.11
+    secret_key: Z#\*3b24(\*q=2KYcEEmdx#up2O-NKkq!#wls^Sing-m8TOQD0$8
+    config_url: http://10.254.254.45:8085/mcabe/netbox-deploy/-/raw/main/configuration.py
+
+    # Ngnix cariables
+    county_code: US
+    state_code: GA
+    locality: Dahlonega
+    org: MGT
+    org_unit: DevOps
+    common_name: netbox.name.org
+
+  tasks:
+ 
+
+    # Ngnix Webserver
+    - name: Creating self-signed certificate
+      command: sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /etc/ssl/private/netbox.key -out /etc/ssl/certs/netbox.crt -subj ""/C={{ county_code }}/ST={{ state_code}}/L={{ locality }}/O={{ org }}/OU={{ org_unit }}/CN={{ common_name}}""
+
+    - name: Copying netbox-rq service
+      copy:
+        src: "/opt/netbox/contrib/nginx.conf"
+        remote_src: true
+        dest: "/etc/nginx/sites-available/netbox"
+
+
+    - name: Remove file (delete file) 
+      ansible.builtin.file:
+        path: /etc/nginx/sites-enabled/default
+        state: absent
+
+
+    - name: Creating a symbolic link ngnix
+      ansible.builtin.file:
+        src: /etc/nginx/sites-available/netbox
+        dest: /etc/nginx/sites-enabled/netbox
+        owner: root
+        group: root
+        state: link
+      become: true
+
+    - name: restart ngnix
+      command: sudo systemctl restart nginx
