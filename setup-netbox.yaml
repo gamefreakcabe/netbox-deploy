@@ -1,0 +1,236 @@
+---
+- name: "Setting up Netbox" 
+  hosts: "staging"
+  remote_user: mcabe
+  become: yes
+  become_method: sudo
+  become_user: root
+  gather_facts: yes
+  connection: ssh
+
+  # Playbook variables
+  vars:
+    # server variable
+    server_user: mcabe
+
+    # Postgres variables
+    db_name: netbox
+    db_user: netbox
+    db_password: J5brHrAXFLQSif0K
+    
+    # Netbox variables
+    NEWVER: 4.2.9 
+    secret_key: Z#\*3b24(\*q=2KYcEEmdx#up2O-NKkq!#wls^Sing-m8TOQD0$8
+    config_url: http://10.254.254.45:8085/mcabe/netbox-deploy/-/raw/main/configuration.py
+
+    # Ngnix cariables
+    county_code: US
+    state_code: GA
+    locality: Dahlonega
+    org: MGT
+    org_unit: DevOps
+    common_name: netbox.name.org
+
+
+
+  tasks:
+    - name: Install packages
+      ansible.builtin.apt:
+        name:
+        # Postgres 
+          - postgresql
+          - postgresql-contrib
+          - libpq-dev
+          - python3-psycopg2
+        # Redis
+          - redis-server
+        # Python
+          - python3 
+          - python3-pip 
+          - python3-venv 
+          - python3-dev 
+          - build-essential 
+          - libxml2-dev 
+          - libxslt1-dev 
+          - libffi-dev 
+          - libpq-dev 
+          - libssl-dev 
+          - zlib1g-dev
+        # Webserver - Ngnix
+          - nginx
+        state: present
+
+    # Setting up PostGres
+    - name: Creating database named netbox
+      command: sudo -u postgres psql -c "CREATE DATABASE {{ db_name }};"
+
+    - name: Creating user netbox with password
+      command: sudo -u postgres psql -c "CREATE USER {{ db_user }} WITH PASSWORD '{{ db_password }}';"
+
+    - name: Altering netbox database to be owned by user netbox
+      command: sudo -u postgres psql -c "ALTER DATABASE {{ db_name }} OWNER TO {{ db_user }}"
+
+    - name: Granting public schema to netbox
+      command: sudo -u postgres psql -c "GRANT CREATE ON SCHEMA public TO {{ db_user }};"
+
+
+    # download version to be upgraded to via wget and rename
+    - name: Downloading new version of Netbox
+      ansible.builtin.get_url:
+        url: https://github.com/netbox-community/netbox/archive/v{{NEWVER}}.tar.gz
+        dest: /home/{{server_user}}/v{{NEWVER}}.tar.gz 
+
+
+    # Extract files from package and place it in /opt
+    - name: Extracting package 
+      ansible.builtin.unarchive:
+        src: /home/{{server_user}}/v{{NEWVER}}.tar.gz
+        dest: /opt
+        remote_src: yes
+      become: true
+
+    # create link to new version for copying files
+    - name: Creating a symbolic link
+      ansible.builtin.file:
+        src: /opt/netbox-{{NEWVER}}/
+        dest: /opt/netbox
+        owner: root
+        group: root
+        state: link
+      become: true
+
+    # Create and setup netbox user
+    - name: Creating netbox user
+      command: sudo adduser --system --group netbox
+
+    # Change ownership to netbox for media directory
+    - name: Recursively change ownership of a directory
+      ansible.builtin.file:
+        path: /opt/netbox/netbox/media
+        state: directory
+        recurse: yes
+        owner: netbox
+        group: netbox
+    
+    # Change ownership to netbox for reports directory
+    - name: Recursively change ownership of a directory
+      ansible.builtin.file:
+        path: /opt/netbox/netbox/reports
+        state: directory
+        recurse: yes
+        owner: netbox
+        group: netbox
+
+    # Change ownership to netbox for script directory
+    - name: Recursively change ownership of a directory
+      ansible.builtin.file:
+        path: /opt/netbox/netbox/scripts
+        state: directory
+        recurse: yes
+        owner: netbox
+        group: netbox
+
+    # Download Netbox configuration from variable URL
+    - name: Download Netbox configuration template
+      ansible.builtin.get_url:
+        url: "{{config_url}}"
+        dest: "/opt/netbox/netbox/netbox/configuration.py"
+        owner: root
+        group: root
+        mode: '0644'
+
+    # Configure Netbox template
+    - name: Configuring database name in Netbox template
+      become: yes
+      become_user: root
+      ansible.builtin.replace:
+        path: /opt/netbox/netbox/netbox/configuration.py
+        regexp: 'db_name'
+        replace: "{{db_name}}" 
+
+    - name: Configuring database user in Netbox template
+      become: yes
+      become_user: root
+      ansible.builtin.replace:
+        path: /opt/netbox/netbox/netbox/configuration.py
+        regexp: 'db_user'
+        replace: "{{db_user}}" 
+
+    - name: Configuring database password in Netbox template
+      become: yes
+      become_user: root
+      ansible.builtin.replace:
+        path: /opt/netbox/netbox/netbox/configuration.py
+        regexp: 'db_password'
+        replace: "{{db_password}}" 
+    
+    - name: Configuring secret key in Netbox template
+      become: yes
+      become_user: root
+      ansible.builtin.replace:
+        path: /opt/netbox/netbox/netbox/configuration.py
+        regexp: 'secret_key'
+        replace: "{{secret_key}}" 
+
+    # Run Netbox upgrade script
+    - name: Execute the script
+      command: sudo /opt/netbox/upgrade.sh
+
+
+    # Configuring Gunicorn
+    - name: Copying gunicorn configuration
+      copy:
+        src: "/opt/netbox/contrib/gunicorn.py"
+        remote_src: true
+        dest: "/opt/netbox/gunicorn.py"
+ 
+    - name: Copying netbox-rq service
+      copy:
+        src: "/opt/netbox/contrib/netbox-rq.service"
+        remote_src: true
+        dest: "/etc/systemd/system/"
+
+    - name: Copying netbox service
+      copy:
+        src: "/opt/netbox/contrib/netbox.service"
+        remote_src: true
+        dest: "/etc/systemd/system/"
+
+    - name: Copying netbox-housekeeping service 
+      copy:
+        src: "/opt/netbox/contrib/netbox-housekeeping.service"
+        remote_src: true
+        dest: "/etc/systemd/system/"
+
+    - name: Reloading daemon
+      command: sudo systemctl daemon-reload
+
+    - name: Enabling netbox and netbox-rq
+      command: sudo systemctl enable --now netbox netbox-rq
+
+    # Ngnix Webserver
+    - name: Creating self-signed certificate
+      command: sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /etc/ssl/private/netbox.key -out /etc/ssl/certs/netbox.crt -subj ""/C={{ county_code }}/ST={{ state_code}}/L={{ locality }}/O={{ org }}/OU={{ org_unit }}/CN={{ common_name}}""
+
+    - name: Copying netbox-rq service
+      copy:
+        src: "/opt/netbox/contrib/nginx.conf"
+        remote_src: true
+        dest: "/etc/nginx/sites-available/netbox"
+
+    - name: Remove default Ngnix
+      ansible.builtin.file:
+        path: /etc/nginx/sites-enabled/default
+        state: absent
+
+    - name: Creating a symbolic link for Nginx
+      ansible.builtin.file:
+        src: /etc/nginx/sites-available/netbox
+        dest: /etc/nginx/sites-enabled/netbox
+        owner: root
+        group: root
+        state: link
+      become: true
+
+    - name: Restarting Ngnix
+      command: sudo systemctl restart nginx
