@@ -21,8 +21,8 @@
     # Netbox variables
     NEWVER: 4.2.9 
     secret_key: Z#\*3b24(\*q=2KYcEEmdx#up2O-NKkq!#wls^Sing-m8TOQD0$8
-    config_url: http://10.254.254.45:8085/mcabe/netbox-deploy/-/raw/main/configuration.py
-
+    config_url: https://github.com/gamefreakcabe/netbox-deploy/blob/bb1ff204d87e01bdfe2290189951714d84eb908f/configuration.py
+    
     # Ngnix cariables
     county_code: US
     state_code: GA
