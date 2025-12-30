@@ -9,7 +9,6 @@
   connection: ssh 
 
   tasks:
-    - include_vars: /tmp/semaphore/var/netbox-var.yaml
     - name: Install packages
       ansible.builtin.apt:
         name:
