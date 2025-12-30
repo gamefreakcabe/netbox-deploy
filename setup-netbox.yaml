@@ -9,7 +9,9 @@
   connection: ssh 
 
   tasks:
-    - include_vars: vars-netbox.yaml
+    - name: Include variables from a file on the remote host
+      include_vars:
+        file: /home/mcabe/vars-netbox.yaml 
         remote_src: true
     - name: Install packages
       ansible.builtin.apt:
