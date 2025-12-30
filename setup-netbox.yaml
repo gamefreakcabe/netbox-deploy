@@ -10,7 +10,7 @@
 
   tasks:
     - include_vars: vars-netbox.yaml
-      remote_src: true
+        remote_src: true
     - name: Install packages
       ansible.builtin.apt:
         name:
