@@ -6,34 +6,10 @@
   become_method: sudo
   become_user: root
   gather_facts: yes
-  connection: ssh
-
-  # Playbook variables
-  vars:
-    # server variable
-    server_user: mcabe
-
-    # Postgres variables
-    db_name: netbox
-    db_user: netbox
-    db_password: J5brHrAXFLQSif0K
-    
-    # Netbox variables
-    NEWVER: 4.2.9 
-    secret_key: Z#\*3b24(\*q=2KYcEEmdx#up2O-NKkq!#wls^Sing-m8TOQD0$8
-    config_url: "https://raw.githubusercontent.com/gamefreakcabe/netbox-deploy/main/configuration.py"
-
-    # Ngnix cariables
-    county_code: US
-    state_code: GA
-    locality: Dahlonega
-    org: MGT
-    org_unit: DevOps
-    common_name: netbox.name.org
-
-
+  connection: ssh 
 
   tasks:
+    - include_vars: vars-netbox.yaml
     - name: Install packages
       ansible.builtin.apt:
         name:
