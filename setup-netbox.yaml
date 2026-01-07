@@ -170,12 +170,12 @@
         src: "/opt/netbox/contrib/netbox.service"
         remote_src: true
         dest: "/etc/systemd/system/"
-
-    - name: Copying netbox-housekeeping service 
-      copy:
-        src: "/opt/netbox/contrib/netbox-housekeeping.service"
-        remote_src: true
-        dest: "/etc/systemd/system/"
+# not needed in new versions
+#    - name: Copying netbox-housekeeping service 
+#      copy:
+#        src: "/opt/netbox/contrib/netbox-housekeeping.service"
+#        remote_src: true
+#        dest: "/etc/systemd/system/"
 
     - name: Reloading daemon
       command: sudo systemctl daemon-reload
