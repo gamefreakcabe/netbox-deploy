@@ -24,12 +24,12 @@
     - name: Downloading new version of Netbox
       ansible.builtin.get_url:
         url: https://github.com/netbox-community/netbox/archive/v{{NEWVER}}.tar.gz
-        dest: /home/layer3/v{{NEWVER}}.tar.gz 
+        dest: /home/{{server_user}}/v{{NEWVER}}.tar.gz 
 
     # Extract files from package and place it in /opt
     - name: Extracting package 
       ansible.builtin.unarchive:
-        src: /home/layer3/v{{NEWVER}}.tar.gz
+        src: /home/{{server_user}}/v{{NEWVER}}.tar.gz
         dest: /opt
       become: true
 
