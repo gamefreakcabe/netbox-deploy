@@ -47,13 +47,14 @@
         state: link
       become: true
 
+    # only for uWSGI
     # copy local requirement from current version to link to new version
-    - name: Copying local requirement from current version to new version
-      copy:
-        src: /opt/netbox-{{OLDVER}}/local_requirements.txt
-        dest: /opt/netbox/
-        remote_src: yes
-      become: true
+#    - name: Copying local requirement from current version to new version
+#      copy:
+#        src: /opt/netbox-{{OLDVER}}/local_requirements.txt
+#        dest: /opt/netbox/
+#        remote_src: yes
+#      become: true
 
     # copy configuration file from current version to link to new version
     - name: Copying configuration file from current version to new version
