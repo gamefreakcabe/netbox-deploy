@@ -1,0 +1,97 @@
+---
+  - name: "Upgrade Netbox"
+    hosts: localhost
+    connection: local
+    vars:
+      NEWVER: 4.2.7 
+      OLDVER: 4.2.3
+    tasks:
+
+    # run apt update
+    - name: Running apt update
+      ansible.builtin.apt:
+        update_cache: yes
+      become: true
+
+#    # copy current version to backup
+#    - name: Backing up current version
+#      copy:
+#        src: /opt/netbox-{{OLDVER}}
+#        dest: /opt/backup
+#      become: true
+
+    # download version to be upgraded to via wget and rename
+    - name: Downloading new version of Netbox
+      ansible.builtin.get_url:
+        url: https://github.com/netbox-community/netbox/archive/v{{NEWVER}}.tar.gz
+        dest: /home/layer3/v{{NEWVER}}.tar.gz 
+
+    # Extract files from package and place it in /opt
+    - name: Extracting package 
+      ansible.builtin.unarchive:
+        src: /home/layer3/v{{NEWVER}}.tar.gz
+        dest: /opt
+      become: true
+
+    # create link to new version for copying files
+    - name: Creating a symbolic link
+      ansible.builtin.file:
+        src: /opt/netbox-{{NEWVER}}/
+        dest: /opt/netbox
+        owner: root
+        group: root
+        state: link
+      become: true
+
+    # copy local requirement from current version to link to new version
+    - name: Copying local requirement from current version to new version
+      copy:
+        src: /opt/netbox-{{OLDVER}}/local_requirements.txt
+        dest: /opt/netbox/
+      become: true
+
+    # copy configuration file from current version to link to new version
+    - name: Copying configuration file from current version to new version
+      copy:
+        src: /opt/netbox-{{OLDVER}}/netbox/netbox/configuration.py
+        dest: /opt/netbox/netbox/netbox/
+      become: true
+
+    # copy media directory from current version to link to new version
+    - name: Copying media directory from current version to new version
+      copy:
+        src: /opt/netbox-{{OLDVER}}/netbox/media/
+        dest: /opt/netbox/netbox/
+      become: true
+
+
+    # copy script directory from current version to link to new version
+    - name: Copying script directory from current version to new version
+      copy:
+        src: /opt/netbox-{{OLDVER}}/netbox/scripts
+        dest: /opt/netbox/netbox/
+      become: true
+
+    # copy reports directory from current version to link to new version
+    - name: Copying reports directory from current version to new version
+      copy:
+        src: /opt/netbox-{{OLDVER}}/netbox/reports
+        dest: /opt/netbox/netbox/
+      become: true
+
+    # copy gunicorn configuration from current version to link to new version
+    - name: Copying gunicorn configuration from current version to new version
+      copy:
+        src: /opt/netbox-{{OLDVER}}/gunicorn.py
+        dest: /opt/netbox/
+      become: true
+
+    # run upgrade.sh command in new version directory
+    - name: Running upgrade.sh on new version
+      command: chdir=/opt/netbox-{{NEWVER}} ./upgrade.sh
+      become: true
+
+    # restart services
+    - name: Restart Nebox services
+      command: systemctl restart netbox netbox-rq
+      become: true
