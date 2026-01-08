@@ -34,6 +34,7 @@
       ansible.builtin.unarchive:
         src: /home/{{server_user}}/v{{NEWVER}}.tar.gz
         dest: /opt
+        remote_src: yes
       become: true
 
     # create link to new version for copying files
@@ -44,6 +45,7 @@
         owner: root
         group: root
         state: link
+        remote_src: yes
       become: true
 
     # copy local requirement from current version to link to new version
@@ -51,6 +53,7 @@
       copy:
         src: /opt/netbox-{{OLDVER}}/local_requirements.txt
         dest: /opt/netbox/
+        remote_src: yes
       become: true
 
     # copy configuration file from current version to link to new version
@@ -58,6 +61,7 @@
       copy:
         src: /opt/netbox-{{OLDVER}}/netbox/netbox/configuration.py
         dest: /opt/netbox/netbox/netbox/
+        remote_src: yes
       become: true
 
     # copy media directory from current version to link to new version
@@ -65,6 +69,7 @@
       copy:
         src: /opt/netbox-{{OLDVER}}/netbox/media/
         dest: /opt/netbox/netbox/
+        remote_src: yes
       become: true
 
 
@@ -73,6 +78,7 @@
       copy:
         src: /opt/netbox-{{OLDVER}}/netbox/scripts
         dest: /opt/netbox/netbox/
+        remote_src: yes
       become: true
 
     # copy reports directory from current version to link to new version
@@ -80,6 +86,7 @@
       copy:
         src: /opt/netbox-{{OLDVER}}/netbox/reports
         dest: /opt/netbox/netbox/
+        remote_src: yes
       become: true
 
     # copy gunicorn configuration from current version to link to new version
@@ -87,6 +94,7 @@
       copy:
         src: /opt/netbox-{{OLDVER}}/gunicorn.py
         dest: /opt/netbox/
+        remote_src: yes
       become: true
 
     # run upgrade.sh command in new version directory
