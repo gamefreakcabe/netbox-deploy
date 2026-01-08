@@ -2,9 +2,6 @@
   - name: "Upgrade Netbox"
     hosts: localhost
     connection: local
-    vars:
-      NEWVER: 4.2.7 
-      OLDVER: 4.2.3
     tasks:
 
     # run apt update
