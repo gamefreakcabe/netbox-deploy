@@ -1,7 +1,13 @@
 ---
-  - name: "Upgrade Netbox"
-    hosts: localhost
-    connection: local
+  - name: "Setting up Netbox" 
+    hosts: "staging"
+    remote_user: mcabe
+    become: yes
+    become_method: sudo
+    become_user: root
+    gather_facts: yes
+    connection: ssh 
+    
     tasks:
 
     # run apt update
