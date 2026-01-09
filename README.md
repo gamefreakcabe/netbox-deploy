@@ -1,6 +1,6 @@
 # netbox-deploy
 
-Need to run create super user after playbook completes
+Need to run create super user after playbook completes (automate?)
 ```
 source /opt/netbox/venv/bin/activate
 ```
